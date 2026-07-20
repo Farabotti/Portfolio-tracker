@@ -213,7 +213,117 @@
     footer { max-width: 1180px; margin: 60px auto 0; padding: 0 28px 40px; color: var(--muted); font-size: 11.5px; line-height: 1.7; }
     footer a { color: var(--muted); }
 
-    @media (max-width: 768px) {
+    @media (max-width: 640px) {
+      header { padding: 24px 16px 8px; }
+      .fx-row, .alloc-section, .sheet-wrap, footer { padding: 0 16px; }
+      .hero-row { flex-direction: column; align-items: flex-start; gap: 20px; }
+      .controls { width: 100%; }
+      button { flex: 1; text-align: center; justify-content: center; }
+
+      /* --- Trasformazione della Tabella in Card per Mobile --- */
+      table.sheet thead { display: none; } /* Nasconde i titoli delle colonne */
+      
+      table.sheet, table.sheet tbody, table.sheet tr, table.sheet td {
+        display: block;
+        width: 100%;
+      }
+      
+      /* Separatori dei Broker */
+      .broker-sep td {
+        background: var(--paper);
+        padding: 8px 12px;
+        margin: 28px 0 10px 0;
+        border-radius: 6px;
+      }
+      
+      /* La singola riga dell'investimento diventa una Card bianca */
+      table.sheet tbody tr:not(.broker-sep):not(.subtotal-row):not(.grand-total-row) {
+        background: var(--paper-raised);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 14px;
+        margin-bottom: 12px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+      }
+      
+      /* Nascondiamo la colonna duplicata del broker all'interno della card */
+      table.sheet tbody tr td:nth-child(1) { display: none; }
+      
+      /* Il Nome del Prodotto occupa la parte alta della card */
+      table.sheet tbody tr td.cell-product {
+        padding: 0 0 10px 0;
+        border-bottom: 1px solid var(--line);
+        margin-bottom: 10px;
+      }
+      
+      /* Allinea ogni riga della card come "Etichetta : Valore" */
+      table.sheet tbody tr:not(.broker-sep):not(.subtotal-row):not(.grand-total-row) td:not(.cell-product) {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 6px 0;
+        border-bottom: none;
+        text-align: right;
+      }
+      
+      /* Inietta le etichette descrittive a sinistra di ogni valore */
+      table.sheet tbody tr td:nth-child(3)::before { content: "Regione"; color: var(--muted); font-size: 12px; font-family: 'Inter', sans-serif; }
+      table.sheet tbody tr td:nth-child(4)::before { content: "Valuta"; color: var(--muted); font-size: 12px; font-family: 'Inter', sans-serif; }
+      table.sheet tbody tr td:nth-child(5)::before { content: "Prezzo"; color: var(--muted); font-size: 12px; font-family: 'Inter', sans-serif; }
+      table.sheet tbody tr font:nth-child(5) input { text-align: right; }
+      table.sheet tbody tr td:nth-child(6)::before { content: "Quote"; color: var(--muted); font-size: 12px; font-family: 'Inter', sans-serif; }
+      table.sheet tbody tr td:nth-child(7)::before { content: "Valore Posizione"; color: var(--muted); font-size: 12px; font-weight: 500; }
+      table.sheet tbody tr td:nth-child(8)::before { content: "Ticker Yahoo"; color: var(--muted); font-size: 12px; font-family: 'Inter', sans-serif; }
+      
+      /* Evidenzia il valore monetario calcolato */
+      table.sheet tbody tr td.flash {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text);
+      }
+      
+      /* Ottimizzazione degli input editabili su mobile */
+      .editable {
+        width: 90px;
+        background: var(--ink);
+        padding: 4px 6px;
+        border-radius: 4px;
+        border-bottom: none;
+      }
+      .sym-input {
+        width: 110px;
+        background: var(--ink);
+        padding: 4px 6px;
+        border-radius: 4px;
+        border-bottom: none;
+        text-align: right;
+      }
+      
+      /* Layout dei Subtotali e del Totale Generale */
+      .subtotal-row, .grand-total-row {
+        display: flex !important;
+        justify-content: space-between;
+        align-items: center;
+        background: transparent !important;
+        border: none !important;
+        padding: 10px 4px !important;
+        margin: 0;
+      }
+      .subtotal-row td, .grand-total-row td {
+        display: block;
+        width: auto;
+        padding: 0;
+        border: none;
+      }
+      .subtotal-row td:empty, .grand-total-row td:empty { display: none; }
+      
+      .grand-total-row {
+        background: var(--paper) !important;
+        padding: 16px 12px !important;
+        border-radius: 8px;
+        margin-top: 14px;
+      }
+
       header { padding: 20px 16px 8px; }
       .fx-row, .alloc-section, .sheet-wrap, footer { padding: 0 16px; }
       table.sheet { font-size: 12px; }
