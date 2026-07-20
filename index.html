@@ -83,6 +83,7 @@
     button.primary:hover { opacity: .92; border-color: var(--gold); }
     button:disabled { opacity: .5; cursor: default; }
 
+    /* ---------- FX Currency Row ---------- */
     .fx-row {
       max-width: 1180px; margin: 22px auto 0; padding: 0 28px;
       display: flex; gap: 22px; flex-wrap: wrap;
@@ -102,7 +103,8 @@
       border-bottom: 1px dashed var(--line);
     }
     .fx-pill input:focus { outline: none; border-color: var(--gold); }
-    /* --- Stile del nuovo Portfolio Recap --- */
+
+    /* ---------- Portfolio Recap Summary Cards ---------- */
     .recap-row {
       max-width: 1180px; margin: 18px auto 0; padding: 0 28px;
       display: flex; gap: 14px; flex-wrap: wrap;
@@ -127,23 +129,7 @@
       font-size: 18px; font-weight: 600; color: var(--text);
     }
 
-    /* ---------- Allocation bar ---------- */
-    .alloc-section { display: none; }
-    .section-title {
-      font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 600; margin: 0 0 16px;
-      display: flex; align-items: center; gap: 10px;
-    }
-    .section-title .n { color: var(--gold); font-family: 'IBM Plex Mono', monospace; font-size: 13px; }
-    .stackbar {
-      display: flex; height: 34px; border-radius: 6px; overflow: hidden; border: 1px solid var(--line);
-    }
-    .stackbar div { height: 100%; transition: width .5s ease; }
-    .legend { display: flex; flex-wrap: wrap; gap: 14px 22px; margin-top: 14px; }
-    .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); }
-    .swatch { width: 10px; height: 10px; border-radius: 2px; }
-    .legend-item b { color: var(--text); font-family: 'IBM Plex Mono', monospace; font-weight: 500; }
-
-    /* ---------- Table Styling (Fixed & Enhanced) ---------- */
+    /* ---------- Table Styling ---------- */
     .sheet-wrap { max-width: 1180px; margin: 56px auto 0; padding: 0 28px; overflow-x: auto; }
     
     table.sheet {
@@ -237,22 +223,25 @@
     footer { max-width: 1180px; margin: 60px auto 0; padding: 0 28px 40px; color: var(--muted); font-size: 11.5px; line-height: 1.7; }
     footer a { color: var(--muted); }
 
+    /* ---------- Mobile Optimization Media Query ---------- */
     @media (max-width: 640px) {
       header { padding: 24px 16px 8px; }
-      .fx-row, .alloc-section, .sheet-wrap, footer { padding: 0 16px; }
+      .fx-row, .sheet-wrap, footer { padding: 0 16px; }
       .hero-row { flex-direction: column; align-items: flex-start; gap: 20px; }
       .controls { width: 100%; }
       button { flex: 1; text-align: center; justify-content: center; }
 
-      /* --- Trasformazione della Tabella in Card per Mobile --- */
-      table.sheet thead { display: none; } /* Nasconde i titoli delle colonne */
+      .recap-row { padding: 0 16px; gap: 10px; }
+      .recap-card { min-width: calc(50% - 5px); padding: 12px; }
+
+      /* --- Transformation of Table into Vertical Cards --- */
+      table.sheet thead { display: none; }
       
       table.sheet, table.sheet tbody, table.sheet tr, table.sheet td {
         display: block;
         width: 100%;
       }
       
-      /* Separatori dei Broker */
       .broker-sep td {
         background: var(--paper);
         padding: 8px 12px;
@@ -260,7 +249,6 @@
         border-radius: 6px;
       }
       
-      /* La singola riga dell'investimento diventa una Card bianca */
       table.sheet tbody tr:not(.broker-sep):not(.subtotal-row):not(.grand-total-row) {
         background: var(--paper-raised);
         border: 1px solid var(--line);
@@ -270,17 +258,14 @@
         box-shadow: 0 1px 3px rgba(0,0,0,0.02);
       }
       
-      /* Nascondiamo la colonna duplicata del broker all'interno della card */
       table.sheet tbody tr td:nth-child(1) { display: none; }
       
-      /* Il Nome del Prodotto occupa la parte alta della card */
       table.sheet tbody tr td.cell-product {
         padding: 0 0 10px 0;
         border-bottom: 1px solid var(--line);
         margin-bottom: 10px;
       }
       
-      /* Allinea ogni riga della card come "Etichetta : Valore" */
       table.sheet tbody tr:not(.broker-sep):not(.subtotal-row):not(.grand-total-row) td:not(.cell-product) {
         display: flex;
         justify-content: space-between;
@@ -290,23 +275,19 @@
         text-align: right;
       }
       
-      /* Inietta le etichette descrittive a sinistra di ogni valore */
       table.sheet tbody tr td:nth-child(3)::before { content: "Regione"; color: var(--muted); font-size: 12px; font-family: 'Inter', sans-serif; }
       table.sheet tbody tr td:nth-child(4)::before { content: "Valuta"; color: var(--muted); font-size: 12px; font-family: 'Inter', sans-serif; }
       table.sheet tbody tr td:nth-child(5)::before { content: "Prezzo"; color: var(--muted); font-size: 12px; font-family: 'Inter', sans-serif; }
-      table.sheet tbody tr font:nth-child(5) input { text-align: right; }
       table.sheet tbody tr td:nth-child(6)::before { content: "Quote"; color: var(--muted); font-size: 12px; font-family: 'Inter', sans-serif; }
       table.sheet tbody tr td:nth-child(7)::before { content: "Valore Posizione"; color: var(--muted); font-size: 12px; font-weight: 500; }
       table.sheet tbody tr td:nth-child(8)::before { content: "Ticker Yahoo"; color: var(--muted); font-size: 12px; font-family: 'Inter', sans-serif; }
       
-      /* Evidenzia il valore monetario calcolato */
       table.sheet tbody tr td.flash {
         font-size: 15px;
         font-weight: 600;
         color: var(--text);
       }
       
-      /* Ottimizzazione degli input editabili su mobile */
       .editable {
         width: 90px;
         background: var(--ink);
@@ -323,7 +304,6 @@
         text-align: right;
       }
       
-      /* Layout dei Subtotali e del Totale Generale */
       .subtotal-row, .grand-total-row {
         display: flex !important;
         justify-content: space-between;
@@ -347,12 +327,6 @@
         border-radius: 8px;
         margin-top: 14px;
       }
-
-      header { padding: 20px 16px 8px; }
-      .fx-row, .alloc-section, .sheet-wrap, footer { padding: 0 16px; }
-      table.sheet { font-size: 12px; }
-      .editable { width: 60px; }
-      .sym-input { width: 80px; }
     }
   </style>
 </head>
@@ -375,13 +349,8 @@
     </div>
   </header>
 
-  <!-- Nuovo blocco di riepilogo per Broker --> <div class="recap-row" id="recapRow"></div>
-
-  <div class="alloc-section">
-    <div class="section-title">Allocazione per Regione <span class="n" id="allocCount"></span></div>
-    <div class="stackbar" id="stackbar"></div>
-    <div class="legend" id="legend"></div>
-  </div>
+  <div class="fx-row" id="fxRow"></div>
+  <div class="recap-row" id="recapRow"></div>
 
   <div class="sheet-wrap">
     <table class="sheet">
@@ -400,8 +369,6 @@
       <tbody id="brokers"></tbody>
     </table>
   </div>
-  .recap-row { padding: 0 16px; gap: 10px; }
-      .recap-card { min-width: calc(50% - 5px); padding: 12px; }
 
   <footer>
     I prezzi e i tassi FX che modifichi vengono salvati privatamente nel browser (localStorage) e rimangono memorizzati al riavvio. Nessun dato viene inviato a server esterni.
@@ -428,7 +395,7 @@ if (!window.storage) {
   const STORAGE_KEY = "holdings_v1";
   const FX_KEY = "fx_v1";
 
-  // ---- Dati Iniziali ----
+  // ---- Dati Iniziali predefiniti ----
   const defaultHoldings = [
     {id:"d1",broker:"Degiro",product:"Amundi STOXX EU 600",isin:"LU0908500753",currency:"EUR",price:319.9,shares:110,region:"Europe",symbol:"lyp6.de"},
     {id:"d2",broker:"Degiro",product:"HSBC MSCI China UCITS ETF USD",isin:"IE00B44T3H88",currency:"EUR",price:6.308,shares:1306,region:"China",symbol:"IE00B44T3H88.SG"},
@@ -455,11 +422,6 @@ if (!window.storage) {
   ];
 
   const defaultFx = {EURCHF:0.9211, USDCHF:0.8059, updated:null};
-
-  const regionColors = {
-    Europe:"#4C7FD9", China:"#C9576B", Gold:"#C9A227", World:"#6E9E8C",
-    Emerging:"#B888D9", Switzerland:"#3FB68B", USA:"#D98E4C", Japan:"#E0C568", Mix:"#6B7A8C"
-  };
 
   let holdings = JSON.parse(JSON.stringify(defaultHoldings));
   let fx = JSON.parse(JSON.stringify(defaultFx));
@@ -609,27 +571,7 @@ if (!window.storage) {
     btn.textContent = "Aggiorna Cambi e Prezzi Live";
     render(true);
   }
-function buildBrokerRecap() {
-    const row = document.getElementById("recapRow");
-    const targetBrokers = ["Degiro", "Swissquote", "Equate+", "Finpension"];
-    
-    row.innerHTML = targetBrokers.map(b => {
-      // Calcola la somma di tutti gli asset appartenenti a questo specifico broker
-      const total = holdings.filter(h => h.broker === b).reduce((s, h) => s + valueCHF(h), 0);
-      
-      // Rinomina Finpension in un nome più chiaro per il recap
-      let nomeVisualizzato = b;
-      if (b === "Finpension") nomeVisualizzato = "Pilastri (3A)";
-      if (b === "Equate+") nomeVisualizzato = "Equate+ (Azioni)";
 
-      return `
-        <div class="recap-card">
-          <div class="recap-label">${nomeVisualizzato}</div>
-          <div class="recap-val">${fmtCHF(total)}</div>
-        </div>
-      `;
-    }).join("");
-  }
   function buildFxRow(){
     const row = document.getElementById("fxRow");
     row.innerHTML = `
@@ -641,18 +583,23 @@ function buildBrokerRecap() {
     document.getElementById("fxUSD").addEventListener("change", e=>{ fx.USDCHF = parseFloat(e.target.value)||fx.USDCHF; saveFx(); render(); });
   }
 
-  function buildAllocation(total){
-    const byRegion = {};
-    holdings.forEach(h => { byRegion[h.region] = (byRegion[h.region]||0) + valueCHF(h); });
-    const entries = Object.entries(byRegion).sort((a,b)=>b[1]-a[1]);
-    document.getElementById("allocCount").textContent = "(" + entries.length + " gruppi)";
-    document.getElementById("stackbar").innerHTML = entries.map(([region,val])=>{
-      const pct = total ? (val/total*100) : 0;
-      return `<div style="width:${pct}%;background:${regionColors[region]||'#555'}" title="${region}: ${pct.toFixed(1)}%"></div>`;
-    }).join("");
-    document.getElementById("legend").innerHTML = entries.map(([region,val])=>{
-      const pct = total ? (val/total*100) : 0;
-      return `<div class="legend-item"><span class="swatch" style="background:${regionColors[region]||'#555'}"></span>${region} <b>${pct.toFixed(1)}%</b> - ${fmtCHF(val)}</div>`;
+  function buildBrokerRecap() {
+    const row = document.getElementById("recapRow");
+    const targetBrokers = ["Degiro", "Swissquote", "Equate+", "Finpension"];
+    
+    row.innerHTML = targetBrokers.map(b => {
+      const total = holdings.filter(h => h.broker === b).reduce((s, h) => s + valueCHF(h), 0);
+      
+      let nomeVisualizzato = b;
+      if (b === "Finpension") nomeVisualizzato = "Pilastri (3A)";
+      if (b === "Equate+") nomeVisualizzato = "Equate+ (Azioni)";
+
+      return `
+        <div class="recap-card">
+          <div class="recap-label">${nomeVisualizzato}</div>
+          <div class="recap-val">${fmtCHF(total)}</div>
+        </div>
+      `;
     }).join("");
   }
 
@@ -714,20 +661,11 @@ function buildBrokerRecap() {
   }
 
   function render(flashChanges){
-    function render(flashChanges){
     const total = holdings.reduce((s,h)=>s+valueCHF(h),0);
     document.getElementById("totalValue").textContent = fmtCHF(total);
     document.getElementById("lastUpdated").textContent = "Aggiornato alle " + fmtTime(new Date());
     buildFxRow();
-    buildBrokerRecap(); // <-- INCOLLA QUESTA RIGA QUI
-    buildAllocation(total);
-    buildBrokers();
-    // ... resto del codice
-    const total = holdings.reduce((s,h)=>s+valueCHF(h),0);
-    document.getElementById("totalValue").textContent = fmtCHF(total);
-    document.getElementById("lastUpdated").textContent = "Aggiornato alle " + fmtTime(new Date());
-    buildFxRow();
-    buildAllocation(total);
+    buildBrokerRecap();
     buildBrokers();
 
     if(flashChanges){
