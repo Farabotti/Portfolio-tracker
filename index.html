@@ -221,7 +221,6 @@
     .dot-none { background: var(--muted); opacity: .5; }
 
     footer { max-width: 1180px; margin: 60px auto 0; padding: 0 28px 40px; color: var(--muted); font-size: 11.5px; line-height: 1.7; }
-    footer a { color: var(--muted); }
 
     /* ---------- Mobile Optimization Media Query ---------- */
     @media (max-width: 640px) {
@@ -234,7 +233,7 @@
       .recap-row { padding: 0 16px; gap: 10px; }
       .recap-card { min-width: calc(50% - 5px); padding: 12px; }
 
-      /* --- Transformation of Table into Vertical Cards --- */
+      /* --- Trasformazione della Tabella in Card per Verticale --- */
       table.sheet thead { display: none; }
       
       table.sheet, table.sheet tbody, table.sheet tr, table.sheet td {
@@ -274,13 +273,15 @@
         border-bottom: none;
         text-align: right;
       }
-      
-      table.sheet tbody tr td:nth-child(3)::before { content: "Regione"; color: var(--muted); font-size: 12px; font-family: 'Inter', sans-serif; }
-      table.sheet tbody tr td:nth-child(4)::before { content: "Valuta"; color: var(--muted); font-size: 12px; font-family: 'Inter', sans-serif; }
-      table.sheet tbody tr td:nth-child(5)::before { content: "Prezzo"; color: var(--muted); font-size: 12px; font-family: 'Inter', sans-serif; }
-      table.sheet tbody tr td:nth-child(6)::before { content: "Quote"; color: var(--muted); font-size: 12px; font-family: 'Inter', sans-serif; }
-      table.sheet tbody tr td:nth-child(7)::before { content: "Valore Posizione"; color: var(--muted); font-size: 12px; font-weight: 500; }
-      table.sheet tbody tr td:nth-child(8)::before { content: "Ticker Yahoo"; color: var(--muted); font-size: 12px; font-family: 'Inter', sans-serif; }
+
+      /* Ottimizzazione Universale dei Tag Mobile via data-attributes */
+      table.sheet tbody tr:not(.broker-sep):not(.subtotal-row):not(.grand-total-row) td:not(.cell-product)::before {
+        content: attr(data-label);
+        color: var(--muted);
+        font-size: 12px;
+        font-family: 'Inter', sans-serif;
+        font-weight: 400;
+      }
       
       table.sheet tbody tr td.flash {
         font-size: 15px;
@@ -288,20 +289,19 @@
         color: var(--text);
       }
       
-      .editable {
-        width: 90px;
+      .editable, .sym-input {
+        width: 100px;
         background: var(--ink);
-        padding: 4px 6px;
+        padding: 5px 8px;
         border-radius: 4px;
-        border-bottom: none;
-      }
-      .sym-input {
-        width: 110px;
-        background: var(--ink);
-        padding: 4px 6px;
-        border-radius: 4px;
+        border: 1px solid transparent;
         border-bottom: none;
         text-align: right;
+      }
+      .editable:focus, .sym-input:focus {
+        background: var(--paper-raised);
+        border: 1px solid var(--gold);
+        outline: none;
       }
       
       .subtotal-row, .grand-total-row {
@@ -395,6 +395,15 @@ if (!window.storage) {
   const STORAGE_KEY = "holdings_v1";
   const FX_KEY = "fx_v1";
 
+  // ---- Helper Debounce per immagazzinamento ed esecuzione ----
+  function debounce(func, timeout = 300) {
+    let timer;
+    return (...args) => {
+      clearTimeout(timer);
+      timer = setTimeout(() => { func.apply(this, args); }, timeout);
+    };
+  }
+
   // ---- Dati Iniziali predefiniti ----
   const defaultHoldings = [
     {id:"d1",broker:"Degiro",product:"Amundi STOXX EU 600",isin:"LU0908500753",currency:"EUR",price:319.9,shares:110,region:"Europe",symbol:"lyp6.de"},
@@ -461,15 +470,19 @@ if (!window.storage) {
       const f = await window.storage.get(FX_KEY);
       if(f && f.value) fx = JSON.parse(f.value);
     }catch(e){ }
+    
+    document.getElementById("lastUpdated").textContent = fx.updated ? "Cambi sincronizzati il " + new Date(fx.updated).toLocaleDateString() : "Dati inizializzati localmente";
     render();
   }
 
   async function saveHoldings(){
-    try{ await window.storage.set(STORAGE_KEY, JSON.stringify(holdings)); }catch(e){ console.error("Salvataggio fallito",e); }
+    try{ await window.storage.set(STORAGE_KEY, JSON.stringify(holdings)); }catch(e){ }
   }
   async function saveFx(){
-    try{ await window.storage.set(FX_KEY, JSON.stringify(fx)); }catch(e){ console.error("Salvataggio FX fallito",e); }
+    try{ await window.storage.set(FX_KEY, JSON.stringify(fx)); }catch(e){ }
   }
+
+  const debouncedSave = debounce(() => { saveHoldings(); }, 500);
 
   async function fetchFxRates(){
     try{
@@ -483,7 +496,7 @@ if (!window.storage) {
       await saveFx();
       return true;
     }catch(e){
-      console.error("Errore fetch tassi FX", e);
+      console.error("Errore FX", e);
       return false;
     }
   }
@@ -495,7 +508,8 @@ if (!window.storage) {
     ]);
   }
 
-  async function fetchOnce(url, ms=6000){
+  // Ottimizzazione di rete: Ridotto a 2500ms per accelerare il bypass di proxy interrotti
+  async function fetchOnce(url, ms=2500){
     const res = await withTimeout(fetch(url, { cache:"no-store" }), ms);
     if(!res.ok) throw new Error("HTTP "+res.status);
     return await res.json();
@@ -520,7 +534,7 @@ if (!window.storage) {
         return await fetchOnce(attempt);
       }catch(e){ lastErr = e; }
     }
-    throw lastErr || new Error("Tutti i tentativi proxy CORS sono falliti");
+    throw lastErr || new Error("Proxy falliti");
   }
 
   async function fetchStooqPrice(symbol, retries=1){
@@ -534,7 +548,7 @@ if (!window.storage) {
       }catch(e) {
         if(attempt===retries) console.error("Errore quotazione live per ticker:", symbol, e);
       }
-      if(attempt<retries) await new Promise(r=>setTimeout(r, 400));
+      if(attempt<retries) await new Promise(r=>setTimeout(r, 300));
     }
     return null;
   }
@@ -569,6 +583,7 @@ if (!window.storage) {
 
     btn.disabled = false;
     btn.textContent = "Aggiorna Cambi e Prezzi Live";
+    document.getElementById("lastUpdated").textContent = "Aggiornato alle " + fmtTime(new Date());
     render(true);
   }
 
@@ -579,8 +594,8 @@ if (!window.storage) {
       <div class="fx-pill">USD - CHF <input type="number" step="0.0001" id="fxUSD" value="${fx.USDCHF}"></div>
       <div class="fx-pill" id="fxStatus">${fx.updated ? "Cambi live delle " + fmtTime(new Date(fx.updated)) : "Tassi di default"}</div>
     `;
-    document.getElementById("fxEUR").addEventListener("change", e=>{ fx.EURCHF = parseFloat(e.target.value)||fx.EURCHF; saveFx(); render(); });
-    document.getElementById("fxUSD").addEventListener("change", e=>{ fx.USDCHF = parseFloat(e.target.value)||fx.USDCHF; saveFx(); render(); });
+    document.getElementById("fxEUR").addEventListener("input", e=>{ fx.EURCHF = parseFloat(e.target.value)||fx.EURCHF; saveFx(); updateTotals(); });
+    document.getElementById("fxUSD").addEventListener("input", e=>{ fx.USDCHF = parseFloat(e.target.value)||fx.USDCHF; saveFx(); updateTotals(); });
   }
 
   function buildBrokerRecap() {
@@ -597,76 +612,103 @@ if (!window.storage) {
       return `
         <div class="recap-card">
           <div class="recap-label">${nomeVisualizzato}</div>
-          <div class="recap-val">${fmtCHF(total)}</div>
+          <div class="recap-val" data-recap-broker="${b}">${fmtCHF(total)}</div>
         </div>
       `;
     }).join("");
   }
 
+  // Ottimizzazione delle Performance DOM: Ricalcolo mirato dei nodi di testo senza distruggere i tag
+  function updateTotals() {
+    let grandTotal = 0;
+    const brokerOrder = ["Degiro","Swissquote","Equate+","Finpension"];
+    
+    // 1. Aggiorna i valori monetari di ciascuna riga
+    holdings.forEach(h => {
+      const rowValEl = document.querySelector(`.flash[data-id="${h.id}"]`);
+      if (rowValEl) rowValEl.textContent = fmtCHF(valueCHF(h));
+    });
+    
+    // 2. Calcola e aggiorna i subtotali di ogni broker
+    brokerOrder.forEach(broker => {
+      const brokerTotal = holdings.filter(h => h.broker === broker).reduce((s, h) => s + valueCHF(h), 0);
+      grandTotal += brokerTotal;
+      
+      const subtotalEl = document.querySelector(`.subtotal-val[data-broker="${broker}"]`);
+      if (subtotalEl) subtotalEl.textContent = fmtCHF(brokerTotal);
+      
+      const recapValEl = document.querySelector(`[data-recap-broker="${broker}"]`);
+      if (recapValEl) recapValEl.textContent = fmtCHF(brokerTotal);
+    });
+    
+    // 3. Modifica i pannelli del totale globale
+    document.getElementById("totalValue").textContent = fmtCHF(grandTotal);
+    const grandTotalEl = document.querySelector(".grandtotal-val");
+    if (grandTotalEl) grandTotalEl.textContent = fmtCHF(grandTotal);
+  }
+
   function buildBrokers(){
     const brokersEl = document.getElementById("brokers");
     const brokerOrder = ["Degiro","Swissquote","Equate+","Finpension"];
-    let grandTotal = 0;
     
     const sections = brokerOrder.map(broker=>{
       const rows = holdings.filter(h=>h.broker===broker);
       if(!rows.length) return "";
-      const brokerTotal = rows.reduce((s,h)=>s+valueCHF(h),0);
-      grandTotal += brokerTotal;
       
       const bodyRows = rows.map(h=>{
-        const vCHF = valueCHF(h);
         const dotClass = h.fixed ? "dot-none" : (h._fetchStatus==="ok" ? "dot-ok" : h._fetchStatus==="fail" ? "dot-fail" : "dot-none");
+        
+        // Iniezione degli attributi data-label per la compressione responsive mobile
         return `
         <tr>
           <td style="font-weight: 500; color: var(--muted);">${h.broker}</td>
           <td class="cell-product"><b>${h.product}</b><span class="cell-isin">${h.isin}</span></td>
-          <td><span class="tag">${h.region}</span></td>
-          <td style="font-family: 'IBM Plex Mono', monospace; font-size:12px;">${h.currency}</td>
-          <td class="num">${h.fixed ? '<span style="color:var(--muted)">-</span>' : `<input class="editable" data-id="${h.id}" data-field="price" type="number" step="0.001" value="${h.price}">`}</td>
-          <td class="num">${h.fixed ? '<span style="color:var(--muted)">-</span>' : `<input class="editable" data-id="${h.id}" data-field="shares" type="number" step="1" value="${h.shares}">`}</td>
-          <td class="num flash" data-id="${h.id}">${fmtCHF(vCHF)}</td>
-          <td>${h.fixed ? '' : `<span class="status-dot ${dotClass}"></span><input class="sym-input" data-id="${h.id}" data-field="symbol" placeholder="Es. NOVN.SW" value="${h.symbol||''}">`}</td>
+          <td data-label="Regione"><span class="tag">${h.region}</span></td>
+          <td data-label="Valuta" style="font-family: 'IBM Plex Mono', monospace; font-size:12px;">${h.currency}</td>
+          <td data-label="Prezzo" class="num">${h.fixed ? '<span style="color:var(--muted)">-</span>' : `<input class="editable" data-id="${h.id}" data-field="price" type="number" step="0.001" value="${h.price}">`}</td>
+          <td data-label="Quote" class="num">${h.fixed ? '<span style="color:var(--muted)">-</span>' : `<input class="editable" data-id="${h.id}" data-field="shares" type="number" step="1" value="${h.shares}">`}</td>
+          <td data-label="Valore Posizione" class="num flash" data-id="${h.id}">-</td>
+          <td data-label="Ticker Yahoo">${h.fixed ? '' : `<span class="status-dot ${dotClass}"></span><input class="sym-input" data-id="${h.id}" data-field="symbol" placeholder="Es. NOVN.SW" value="${h.symbol||''}">`}</td>
         </tr>`;
       }).join("");
       
       return `
       <tr class="broker-sep"><td colspan="8">${broker}</td></tr>
       ${bodyRows}
-      <tr class="subtotal-row"><td colspan="6">Totale Parziale - ${broker}</td><td class="num" style="font-weight:600; color:var(--text);">${fmtCHF(brokerTotal)}</td><td></td></tr>`;
+      <tr class="subtotal-row"><td colspan="6">Totale Parziale - ${broker}</td><td class="num subtotal-val" data-broker="${broker}">-</td><td></td></tr>`;
     }).join("");
 
     brokersEl.innerHTML = sections + `
-      <tr class="grand-total-row" style="background: var(--paper);"><td colspan="6" style="font-weight:700;">Totale Portafoglio Globale</td><td class="num" style="font-weight:700; color:var(--gold);">${fmtCHF(grandTotal)}</td><td></td></tr>`;
-
-    brokersEl.querySelectorAll(".editable").forEach(inp=>{
-      inp.addEventListener("change", e=>{
-        const id = e.target.dataset.id, field = e.target.dataset.field;
-        const h = holdings.find(x=>x.id===id);
-        const val = parseFloat(e.target.value);
-        if(!isNaN(val)) h[field] = val;
-        saveHoldings();
-        render();
-      });
-    });
-    
-    brokersEl.querySelectorAll(".sym-input").forEach(inp=>{
-      inp.addEventListener("change", e=>{
-        const id = e.target.dataset.id;
-        const h = holdings.find(x=>x.id===id);
-        h.symbol = e.target.value.trim();
-        saveHoldings();
-      });
-    });
+      <tr class="grand-total-row" style="background: var(--paper);"><td colspan="6" style="font-weight:700;">Totale Portafoglio Globale</td><td class="num grandtotal-val" style="font-weight:700; color:var(--gold);">-</td><td></td></tr>`;
   }
 
+  // Gestione degli input tramite delega degli eventi a livello radice (Mantiene il focus attivo)
+  const brokersEl = document.getElementById("brokers");
+  brokersEl.addEventListener("input", e => {
+    const target = e.target;
+    const id = target.dataset.id;
+    const field = target.dataset.field;
+    if (!id || !field) return;
+    
+    const h = holdings.find(x => x.id === id);
+    if (field === "symbol") {
+      h.symbol = target.value.trim();
+      debouncedSave();
+    } else {
+      const val = parseFloat(target.value);
+      if (!isNaN(val)) {
+        h[field] = val;
+        updateTotals(); // Esegue il ricalcolo istantaneo delle sole celle numeriche
+        debouncedSave(); // Salva su disco solo dopo una pausa nella digitazione
+      }
+    }
+  });
+
   function render(flashChanges){
-    const total = holdings.reduce((s,h)=>s+valueCHF(h),0);
-    document.getElementById("totalValue").textContent = fmtCHF(total);
-    document.getElementById("lastUpdated").textContent = "Aggiornato alle " + fmtTime(new Date());
     buildFxRow();
     buildBrokerRecap();
     buildBrokers();
+    updateTotals();
 
     if(flashChanges){
       holdings.forEach(h=>{
@@ -682,8 +724,8 @@ if (!window.storage) {
   }
 
   document.getElementById("refreshBtn").addEventListener("click", refreshAll);
-  document.getElementById("resetBtn").addEventListener("click", async ()=>{
-    if(confirm("Sei sicuro di voler ripristinare i valori predefiniti del foglio Excel? Le tue modifiche andranno perse.")) {
+  document.getElementById("resetBtn").addEventListener("click", async () => {
+    if(confirm("Ripristinare i valori predefiniti del foglio Excel? Le modifiche locali andranno perse.")) {
       holdings = JSON.parse(JSON.stringify(defaultHoldings));
       fx = JSON.parse(JSON.stringify(defaultFx));
       await saveHoldings(); await saveFx();
