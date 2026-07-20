@@ -102,6 +102,30 @@
       border-bottom: 1px dashed var(--line);
     }
     .fx-pill input:focus { outline: none; border-color: var(--gold); }
+    /* --- Stile del nuovo Portfolio Recap --- */
+    .recap-row {
+      max-width: 1180px; margin: 18px auto 0; padding: 0 28px;
+      display: flex; gap: 14px; flex-wrap: wrap;
+    }
+    .recap-card {
+      font-family: 'Inter', sans-serif;
+      background: var(--paper-raised);
+      border: 1px solid var(--line);
+      padding: 14px 18px; border-radius: 8px;
+      min-width: 180px;
+      flex: 1;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.01);
+    }
+    .recap-card .recap-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .06em;
+      margin-bottom: 6px;
+    }
+    .recap-card .recap-val {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 18px; font-weight: 600; color: var(--text);
+    }
 
     /* ---------- Allocation bar ---------- */
     .alloc-section { display: none; }
@@ -351,7 +375,7 @@
     </div>
   </header>
 
-  <div class="fx-row" id="fxRow"></div>
+  <!-- Nuovo blocco di riepilogo per Broker --> <div class="recap-row" id="recapRow"></div>
 
   <div class="alloc-section">
     <div class="section-title">Allocazione per Regione <span class="n" id="allocCount"></span></div>
@@ -376,6 +400,8 @@
       <tbody id="brokers"></tbody>
     </table>
   </div>
+  .recap-row { padding: 0 16px; gap: 10px; }
+      .recap-card { min-width: calc(50% - 5px); padding: 12px; }
 
   <footer>
     I prezzi e i tassi FX che modifichi vengono salvati privatamente nel browser (localStorage) e rimangono memorizzati al riavvio. Nessun dato viene inviato a server esterni.
@@ -583,7 +609,27 @@ if (!window.storage) {
     btn.textContent = "Aggiorna Cambi e Prezzi Live";
     render(true);
   }
+function buildBrokerRecap() {
+    const row = document.getElementById("recapRow");
+    const targetBrokers = ["Degiro", "Swissquote", "Equate+", "Finpension"];
+    
+    row.innerHTML = targetBrokers.map(b => {
+      // Calcola la somma di tutti gli asset appartenenti a questo specifico broker
+      const total = holdings.filter(h => h.broker === b).reduce((s, h) => s + valueCHF(h), 0);
+      
+      // Rinomina Finpension in un nome più chiaro per il recap
+      let nomeVisualizzato = b;
+      if (b === "Finpension") nomeVisualizzato = "Pilastri (3A)";
+      if (b === "Equate+") nomeVisualizzato = "Equate+ (Azioni)";
 
+      return `
+        <div class="recap-card">
+          <div class="recap-label">${nomeVisualizzato}</div>
+          <div class="recap-val">${fmtCHF(total)}</div>
+        </div>
+      `;
+    }).join("");
+  }
   function buildFxRow(){
     const row = document.getElementById("fxRow");
     row.innerHTML = `
@@ -668,6 +714,15 @@ if (!window.storage) {
   }
 
   function render(flashChanges){
+    function render(flashChanges){
+    const total = holdings.reduce((s,h)=>s+valueCHF(h),0);
+    document.getElementById("totalValue").textContent = fmtCHF(total);
+    document.getElementById("lastUpdated").textContent = "Aggiornato alle " + fmtTime(new Date());
+    buildFxRow();
+    buildBrokerRecap(); // <-- INCOLLA QUESTA RIGA QUI
+    buildAllocation(total);
+    buildBrokers();
+    // ... resto del codice
     const total = holdings.reduce((s,h)=>s+valueCHF(h),0);
     document.getElementById("totalValue").textContent = fmtCHF(total);
     document.getElementById("lastUpdated").textContent = "Aggiornato alle " + fmtTime(new Date());
