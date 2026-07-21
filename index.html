@@ -201,7 +201,7 @@
     
     .editable {
       background: transparent; border: none; border-bottom: 1px dashed var(--line); color: var(--text);
-      font-family: 'IBM Plex Mono', monospace; font-size: 13px; text-align: right; width: 80px;
+      font-family: 'IBM Plex Mono', monospace; font-size: 13px; text-align: right; width: 90px;
       padding: 4px 0;
     }
     .editable:hover { border-color: var(--muted); }
@@ -274,7 +274,7 @@
         text-align: right;
       }
 
-      /* Ottimizzazione Universale dei Tag Mobile via data-attributes */
+      /* Tag Mobile via data-attributes */
       table.sheet tbody tr:not(.broker-sep):not(.subtotal-row):not(.grand-total-row) td:not(.cell-product)::before {
         content: attr(data-label);
         color: var(--muted);
@@ -290,7 +290,7 @@
       }
       
       .editable, .sym-input {
-        width: 100px;
+        width: 110px;
         background: var(--ink);
         padding: 5px 8px;
         border-radius: 4px;
@@ -360,7 +360,7 @@
           <th>Asset / ETF</th>
           <th>Regione</th>
           <th>Valuta</th>
-          <th style="text-align:right">Prezzo</th>
+          <th style="text-align:right">Prezzo / Valore</th>
           <th style="text-align:right">Quote</th>
           <th style="text-align:right">Valore (CHF)</th>
           <th>Ticker Yahoo</th>
@@ -395,7 +395,6 @@ if (!window.storage) {
   const STORAGE_KEY = "holdings_v1";
   const FX_KEY = "fx_v1";
 
-  // ---- Helper Debounce per immagazzinamento ed esecuzione ----
   function debounce(func, timeout = 300) {
     let timer;
     return (...args) => {
@@ -404,7 +403,7 @@ if (!window.storage) {
     };
   }
 
-  // ---- Dati Iniziali predefiniti ----
+  // ---- Dati Iniziali: Aggiornate le due voci Finpension ----
   const defaultHoldings = [
     {id:"d1",broker:"Degiro",product:"Amundi STOXX EU 600",isin:"LU0908500753",currency:"EUR",price:319.9,shares:110,region:"Europe",symbol:"lyp6.de"},
     {id:"d2",broker:"Degiro",product:"HSBC MSCI China UCITS ETF USD",isin:"IE00B44T3H88",currency:"EUR",price:6.308,shares:1306,region:"China",symbol:"IE00B44T3H88.SG"},
@@ -425,9 +424,8 @@ if (!window.storage) {
     {id:"e2",broker:"Equate+",product:"Sandoz blocked shares",isin:"CH0454664001",currency:"CHF",price:70.64,shares:6,region:"Switzerland",symbol:"SDZ.SW"},
     {id:"e3",broker:"Equate+",product:"Takeda shares",isin:"JP3463000004",currency:"USD",price:16.815,shares:510,region:"Japan",symbol:"TAK.US"},
     
-    {id:"f1",broker:"Finpension",product:"3a Retirement Finpension 2024",isin:"-",currency:"CHF",price:60965.18,shares:1,region:"Mix",symbol:"",fixed:true},
-    {id:"f2",broker:"Finpension",product:"Pillar 3A (1)",isin:"-",currency:"CHF",price:57798,shares:1,region:"Mix",symbol:"",fixed:true},
-    {id:"f3",broker:"Finpension",product:"Pillar 3A (2)",isin:"-",currency:"CHF",price:16091,shares:1,region:"Mix",symbol:"",fixed:true},
+    {id:"f1",broker:"Finpension",product:"Pilastro 3A (first)",isin:"-",currency:"CHF",price:57798,shares:1,region:"Mix",symbol:"",fixed:true},
+    {id:"f2",broker:"Finpension",product:"Pilastro 3A (second)",isin:"-",currency:"CHF",price:16091,shares:1,region:"Mix",symbol:"",fixed:true},
   ];
 
   const defaultFx = {EURCHF:0.9211, USDCHF:0.8059, updated:null};
@@ -508,7 +506,6 @@ if (!window.storage) {
     ]);
   }
 
-  // Ottimizzazione di rete: Ridotto a 2500ms per accelerare il bypass di proxy interrotti
   async function fetchOnce(url, ms=2500){
     const res = await withTimeout(fetch(url, { cache:"no-store" }), ms);
     if(!res.ok) throw new Error("HTTP "+res.status);
@@ -618,18 +615,15 @@ if (!window.storage) {
     }).join("");
   }
 
-  // Ottimizzazione delle Performance DOM: Ricalcolo mirato dei nodi di testo senza distruggere i tag
   function updateTotals() {
     let grandTotal = 0;
     const brokerOrder = ["Degiro","Swissquote","Equate+","Finpension"];
     
-    // 1. Aggiorna i valori monetari di ciascuna riga
     holdings.forEach(h => {
       const rowValEl = document.querySelector(`.flash[data-id="${h.id}"]`);
       if (rowValEl) rowValEl.textContent = fmtCHF(valueCHF(h));
     });
     
-    // 2. Calcola e aggiorna i subtotali di ogni broker
     brokerOrder.forEach(broker => {
       const brokerTotal = holdings.filter(h => h.broker === broker).reduce((s, h) => s + valueCHF(h), 0);
       grandTotal += brokerTotal;
@@ -641,7 +635,6 @@ if (!window.storage) {
       if (recapValEl) recapValEl.textContent = fmtCHF(brokerTotal);
     });
     
-    // 3. Modifica i pannelli del totale globale
     document.getElementById("totalValue").textContent = fmtCHF(grandTotal);
     const grandTotalEl = document.querySelector(".grandtotal-val");
     if (grandTotalEl) grandTotalEl.textContent = fmtCHF(grandTotal);
@@ -658,17 +651,21 @@ if (!window.storage) {
       const bodyRows = rows.map(h=>{
         const dotClass = h.fixed ? "dot-none" : (h._fetchStatus==="ok" ? "dot-ok" : h._fetchStatus==="fail" ? "dot-fail" : "dot-none");
         
-        // Iniezione degli attributi data-label per la compressione responsive mobile
+        // Per gli asset 'fixed' (come i Pilastri 3A), sblocchiamo il Prezzo rendendolo la casella del Valore Totale
+        const priceInput = `<input class="editable" data-id="${h.id}" data-field="price" type="number" step="0.01" value="${h.price}">`;
+        const sharesInput = h.fixed ? `<span style="color:var(--muted)">1</span>` : `<input class="editable" data-id="${h.id}" data-field="shares" type="number" step="1" value="${h.shares}">`;
+        const symbolField = h.fixed ? `<span class="status-dot dot-none"></span><span style="font-size:11px;color:var(--muted);">Fisso (Manuale)</span>` : `<span class="status-dot ${dotClass}"></span><input class="sym-input" data-id="${h.id}" data-field="symbol" placeholder="Es. NOVN.SW" value="${h.symbol||''}">`;
+
         return `
         <tr>
           <td style="font-weight: 500; color: var(--muted);">${h.broker}</td>
           <td class="cell-product"><b>${h.product}</b><span class="cell-isin">${h.isin}</span></td>
           <td data-label="Regione"><span class="tag">${h.region}</span></td>
           <td data-label="Valuta" style="font-family: 'IBM Plex Mono', monospace; font-size:12px;">${h.currency}</td>
-          <td data-label="Prezzo" class="num">${h.fixed ? '<span style="color:var(--muted)">-</span>' : `<input class="editable" data-id="${h.id}" data-field="price" type="number" step="0.001" value="${h.price}">`}</td>
-          <td data-label="Quote" class="num">${h.fixed ? '<span style="color:var(--muted)">-</span>' : `<input class="editable" data-id="${h.id}" data-field="shares" type="number" step="1" value="${h.shares}">`}</td>
+          <td data-label="Prezzo / Valore" class="num">${priceInput}</td>
+          <td data-label="Quote" class="num">${sharesInput}</td>
           <td data-label="Valore Posizione" class="num flash" data-id="${h.id}">-</td>
-          <td data-label="Ticker Yahoo">${h.fixed ? '' : `<span class="status-dot ${dotClass}"></span><input class="sym-input" data-id="${h.id}" data-field="symbol" placeholder="Es. NOVN.SW" value="${h.symbol||''}">`}</td>
+          <td data-label="Ticker Yahoo">${symbolField}</td>
         </tr>`;
       }).join("");
       
@@ -682,7 +679,6 @@ if (!window.storage) {
       <tr class="grand-total-row" style="background: var(--paper);"><td colspan="6" style="font-weight:700;">Totale Portafoglio Globale</td><td class="num grandtotal-val" style="font-weight:700; color:var(--gold);">-</td><td></td></tr>`;
   }
 
-  // Gestione degli input tramite delega degli eventi a livello radice (Mantiene il focus attivo)
   const brokersEl = document.getElementById("brokers");
   brokersEl.addEventListener("input", e => {
     const target = e.target;
@@ -698,8 +694,8 @@ if (!window.storage) {
       const val = parseFloat(target.value);
       if (!isNaN(val)) {
         h[field] = val;
-        updateTotals(); // Esegue il ricalcolo istantaneo delle sole celle numeriche
-        debouncedSave(); // Salva su disco solo dopo una pausa nella digitazione
+        updateTotals();
+        debouncedSave();
       }
     }
   });
