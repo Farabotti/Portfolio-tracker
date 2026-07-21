@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portfolio Investment Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --ink: #F4F5F7;
+      --paper: #EBEDF1;
+      --paper-raised: #FFFFFF;
+      --line: #DDE1E7;
+      --text: #1A2430;
+      --muted: #6B7684;
+      --gain: #1F9D6B;
+      --loss: #C94A3C;
+      --gold: #96720E;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--ink); color: var(--text); font-family: 'Inter', sans-serif; }
+    
+    #root {
+      min-height: 100vh;
+      padding: 0 0 48px 0;
+    }
+
+    .flash-up { color: var(--gain) !important; font-weight: 700; }
+    .flash-down { color: var(--loss) !important; font-weight: 700; }
+
+    /* ---------- Header ---------- */
+    header {
+      max-width: 1180px; margin: 0 auto; padding: 40px 28px 8px;
+    }
+    .eyebrow {
+      font-family: 'IBM Plex Mono', monospace;
+      text-transform: uppercase;
+      letter-spacing: .14em;
+      font-size: 11px;
+      color: var(--muted);
+      margin: 0 0 10px;
+    }
+    h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(28px, 4vw, 44px);
+      margin: 0 0 26px;
+      font-weight: 600;
+      letter-spacing: -.01em;
+    }
+    .hero-row {
+      display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; justify-content: space-between;
+      margin-bottom: 6px;
+    }
+    .total-block .label { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; }
+    .total-value {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(38px, 6vw, 64px);
+      font-weight: 700;
+      color: var(--gold);
+      line-height: 1;
+      margin-top: 4px;
+      font-variant-numeric: tabular-nums;
+    }
+    .subline { color: var(--muted); font-size: 13px; margin-top: 8px; }
+
+    .controls { display: flex; gap: 10px; flex-wrap: wrap; }
+    button {
+      font-family: 'Inter', sans-serif;
+      font-size: 13px; font-weight: 600;
+      background: var(--paper-raised);
+      color: var(--text);
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 10px 16px;
+      cursor: pointer;
+      transition: border-color .15s ease, transform .1s ease;
+    }
+    button:hover { border-color: var(--gold); }
+    button:active { transform: translateY(1px); }
+    button.primary { background: var(--gold); color: #1A1300; border-color: var(--gold); }
+    button.primary:hover { opacity: .92; border-color: var(--gold); }
+    button:disabled { opacity: .5; cursor: default; }
+
+    /* ---------- FX Currency Row ---------- */
+    .fx-row {
+      max-width: 1180px; margin: 22px auto 0; padding: 0 28px;
+      display: flex; gap: 22px; flex-wrap: wrap;
+    }
+    .fx-pill {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px; color: var(--muted);
+      background: var(--paper);
+      border: 1px solid var(--line);
+      padding: 7px 12px; border-radius: 20px;
+      display: flex; gap: 8px; align-items: center;
+    }
+    .fx-pill b { color: var(--text); }
+    .fx-pill input {
+      width: 62px; background: transparent; border: none; color: var(--text);
+      font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+      border-bottom: 1px dashed var(--line);
+    }
+    .fx-pill input:focus { outline: none; border-color: var(--gold); }
+
+    /* ---------- Portfolio Recap Summary Cards ---------- */
+    .recap-row {
+      max-width: 1180px; margin: 18px auto 0; padding: 0 28px;
+      display: flex; gap: 14px; flex-wrap: wrap;
+    }
+    .recap-card {
+      font-family: 'Inter', sans-serif;
+      background: var(--paper-raised);
+      border: 1px solid var(--line);
+      padding: 14px 18px; border-radius: 8px;
+      min-width: 180px;
+      flex: 1;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.01);
+    }
+    .recap-card .recap-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .06em;
+      margin-bottom: 6px;
+    }
+    .recap-card .recap-val {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 18px; font-weight: 600; color: var(--text);
+    }
+
+    /* ---------- Table Styling ---------- */
+    .sheet-wrap { max-width: 1180px; margin: 56px auto 0; padding: 0 28px; overflow-x: auto; }
+    
+    table.sheet {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 14px;
+    }
+    table.sheet th {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 12px 10px;
+      border-bottom: 2px solid var(--line);
+      letter-spacing: .05em;
+    }
+    table.sheet td {
+      padding: 12px 10px;
+      border-bottom: 1px solid var(--line);
+      vertical-align: middle;
+    }
+    table.sheet tbody tr:hover {
+      background: rgba(255, 255, 255, 0.4);
+    }
+
+    .broker-sep td {
+      background: var(--paper);
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      padding: 10px 10px;
+      pointer-events: none;
+    }
+    .subtotal-row td {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 13px;
+      color: var(--muted);
+      padding: 14px 10px;
+      background: transparent;
+      border-bottom: 2px solid var(--line);
+    }
+    .grand-total-row td {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      padding: 24px 10px;
+      border-bottom: none;
+    }
+    .grand-total-row .num {
+      font-size: 20px;
+      color: var(--text);
+    }
+
+    .cell-product b { display: block; font-size: 14px; color: var(--text); }
+    .cell-isin { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); display: block; margin-top: 2px; }
+
+    .product { font-weight: 500; color: var(--text); font-size: 15px; line-height: 1.4; }
+    .tag {
+      font-size: 10.5px; color: var(--muted); display: inline-block;
+      text-transform: uppercase; letter-spacing: .05em;
+      background: var(--paper); padding: 3px 8px; border-radius: 4px;
+    }
+    .num { font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums; text-align: right; }
+    .flash { transition: color 0.5s ease; }
+    
+    .editable {
+      background: transparent; border: none; border-bottom: 1px dashed var(--line); color: var(--text);
+      font-family: 'IBM Plex Mono', monospace; font-size: 13px; text-align: right; width: 90px;
+      padding: 4px 0;
+    }
+    .editable:hover { border-color: var(--muted); }
+    .editable:focus { outline: none; border-color: var(--gold); background: var(--paper-raised); }
+    
+    .sym-input {
+      background: transparent; border: none; border-bottom: 1px dashed var(--line); color: var(--muted);
+      font-family: 'IBM Plex Mono', monospace; font-size: 12px; text-align: left; width: 110px;
+      padding: 4px 0;
+    }
+    .sym-input:hover { border-color: var(--muted); }
+    .sym-input:focus { outline: none; border-color: var(--gold); color: var(--text); }
+    
+    .status-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 6px; vertical-align: middle; }
+    .dot-ok { background: var(--gain); }
+    .dot-fail { background: var(--loss); }
+    .dot-none { background: var(--muted); opacity: .5; }
+
+    footer { max-width: 1180px; margin: 60px auto 0; padding: 0 28px 40px; color: var(--muted); font-size: 11.5px; line-height: 1.7; }
+
+    /* ---------- Mobile Optimization Media Query ---------- */
+    @media (max-width: 640px) {
+      header { padding: 24px 16px 8px; }
+      .fx-row, .sheet-wrap, footer { padding: 0 16px; }
+      .hero-row { flex-direction: column; align-items: flex-start; gap: 20px; }
+      .controls { width: 100%; }
+      button { flex: 1; text-align: center; justify-content: center; }
+
+      .recap-row { padding: 0 16px; gap: 10px; }
+      .recap-card { min-width: calc(50% - 5px); padding: 12px; }
+
+      /* --- Trasformazione della Tabella in Card per Verticale --- */
+      table.sheet thead { display: none; }
+      
+      table.sheet, table.sheet tbody, table.sheet tr, table.sheet td {
+        display: block;
+        width: 100%;
+      }
+      
+      .broker-sep td {
+        background: var(--paper);
+        padding: 8px 12px;
+        margin: 28px 0 10px 0;
+        border-radius: 6px;
+      }
+      
+      table.sheet tbody tr:not(.broker-sep):not(.subtotal-row):not(.grand-total-row) {
+        background: var(--paper-raised);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 14px;
+        margin-bottom: 12px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+      }
+      
+      table.sheet tbody tr td:nth-child(1) { display: none; }
+      
+      table.sheet tbody tr td.cell-product {
+        padding: 0 0 10px 0;
+        border-bottom: 1px solid var(--line);
+        margin-bottom: 10px;
+      }
+      
+      table.sheet tbody tr:not(.broker-sep):not(.subtotal-row):not(.grand-total-row) td:not(.cell-product) {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 6px 0;
+        border-bottom: none;
+        text-align: right;
+      }
+
+      /* Tag Mobile via data-attributes */
+      table.sheet tbody tr:not(.broker-sep):not(.subtotal-row):not(.grand-total-row) td:not(.cell-product)::before {
+        content: attr(data-label);
+        color: var(--muted);
+        font-size: 12px;
+        font-family: 'Inter', sans-serif;
+        font-weight: 400;
+      }
+      
+      table.sheet tbody tr td.flash {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text);
+      }
+      
+      .editable, .sym-input {
+        width: 110px;
+        background: var(--ink);
+        padding: 5px 8px;
+        border-radius: 4px;
+        border: 1px solid transparent;
+        border-bottom: none;
+        text-align: right;
+      }
+      .editable:focus, .sym-input:focus {
+        background: var(--paper-raised);
+        border: 1px solid var(--gold);
+        outline: none;
+      }
+      
+      .subtotal-row, .grand-total-row {
+        display: flex !important;
+        justify-content: space-between;
+        align-items: center;
+        background: transparent !important;
+        border: none !important;
+        padding: 10px 4px !important;
+        margin: 0;
+      }
+      .subtotal-row td, .grand-total-row td {
+        display: block;
+        width: auto;
+        padding: 0;
+        border: none;
+      }
+      .subtotal-row td:empty, .grand-total-row td:empty { display: none; }
+      
+      .grand-total-row {
+        background: var(--paper) !important;
+        padding: 16px 12px !important;
+        border-radius: 8px;
+        margin-top: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div id="root">
+  <header>
+    <p class="eyebrow">Privato - Dati Locali</p>
+    <h1>Portfolio Status</h1>
+    <div class="hero-row">
+      <div class="total-block">
+        <div class="label">Valore Totale</div>
+        <div class="total-value" id="totalValue">CHF -</div>
+        <div class="subline" id="lastUpdated">Caricamento dati...</div>
+      </div>
+      <div class="controls">
+        <button id="refreshBtn" class="primary">Aggiorna Cambi e Prezzi Live</button>
+        <button id="resetBtn">Ripristina Default</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="fx-row" id="fxRow"></div>
+  <div class="recap-row" id="recapRow"></div>
+
+  <div class="sheet-wrap">
+    <table class="sheet">
+      <thead>
+        <tr>
+          <th>Broker</th>
+          <th>Asset / ETF</th>
+          <th>Regione</th>
+          <th>Valuta</th>
+          <th style="text-align:right">Prezzo / Valore</th>
+          <th style="text-align:right">Quote</th>
+          <th style="text-align:right">Valore (CHF)</th>
+          <th>Ticker Yahoo</th>
+        </tr>
+      </thead>
+      <tbody id="brokers"></tbody>
+    </table>
+  </div>
+
+  <footer>
+    I prezzi e i tassi FX che modifichi vengono salvati privatamente nel browser (localStorage) e rimangono memorizzati al riavvio. Nessun dato viene inviato a server esterni.
+    L'aggiornamento automatico scarica i tassi EUR/CHF e USD/CHF da frankfurter.app e le quotazioni storiche/live da Yahoo Finance usando i ticker forniti (es. NOVN.SW).
+    I dati di mercato pubblici gratuiti possono subire ritardi o essere temporaneamente irraggiungibili; in tal caso, le righe mantengono l'ultimo prezzo noto e puoi sovrascriverlo manualmente.
+  </footer>
+</div>
+
+<script>
+// ---- ADAPTER / POLYFILL PER LOCALSTORAGE ----
+if (!window.storage) {
+  window.storage = {
+    get: function(key) {
+      return Promise.resolve({ value: localStorage.getItem(key) });
+    },
+    set: function(key, value) {
+      localStorage.setItem(key, value);
+      return Promise.resolve();
+    }
+  };
+}
+
+(function(){
+  const STORAGE_KEY = "holdings_v1";
+  const FX_KEY = "fx_v1";
+
+  function debounce(func, timeout = 300) {
+    let timer;
+    return (...args) => {
+      clearTimeout(timer);
+      timer = setTimeout(() => { func.apply(this, args); }, timeout);
+    };
+  }
+
+  // ---- Dati Iniziali: Aggiornate le due voci Finpension ----
+  const defaultHoldings = [
+    {id:"d1",broker:"Degiro",product:"Amundi STOXX EU 600",isin:"LU0908500753",currency:"EUR",price:319.9,shares:110,region:"Europe",symbol:"lyp6.de"},
+    {id:"d2",broker:"Degiro",product:"HSBC MSCI China UCITS ETF USD",isin:"IE00B44T3H88",currency:"EUR",price:6.308,shares:1306,region:"China",symbol:"IE00B44T3H88.SG"},
+    {id:"d3",broker:"Degiro",product:"GOLD ETC",isin:"IE00B579F325",currency:"EUR",price:349.69,shares:46,region:"Gold",symbol:"IE00B579F325.SG"},
+    {id:"d4",broker:"Degiro",product:"iShares MSCI World Energy",isin:"IE00BJ5JP105",currency:"EUR",price:7.502,shares:1050,region:"World",symbol:"IE00BJ5JP105.SG"},
+    {id:"d5",broker:"Degiro",product:"SPDR MSCI Europe Financials UCITS ETF",isin:"IE00BKWQ0G16",currency:"EUR",price:143.96,shares:287,region:"Europe",symbol:"IE00BKWQ0G16.SG"},
+    {id:"d6",broker:"Degiro",product:"UBS ETF Foreign AAA-BBB 1-5",isin:"LU0879397742",currency:"EUR",price:11.608,shares:188,region:"World",symbol:"LU0879397742.SG"},
+    {id:"d7",broker:"Degiro",product:"Xtrackers MSCI Emerging Markets UCITS ETF",isin:"IE00BTJRMP35",currency:"CHF",price:73.92,shares:335,region:"Emerging",symbol:"xmme.sw"},
+    {id:"d8",broker:"Degiro",product:"Revolution Medicines",isin:"US76155X1000",currency:"USD",price:191.36,shares:42,region:"USA",symbol:"RVMD.US"},
+    
+    {id:"s1",broker:"Swissquote",product:"iShares Swiss Dividend ETF (CH)",isin:"CH0237935637",currency:"CHF",price:192.02,shares:337,region:"Switzerland",symbol:"CHDVD.SW"},
+    {id:"s2",broker:"Swissquote",product:"iShares EURO STOXX Banks ETF",isin:"DE0006289309",currency:"EUR",price:30.255,shares:1474,region:"Europe",symbol:"DE0006289309.SG"},
+    {id:"s3",broker:"Swissquote",product:"iShares Core Euro Government Bond",isin:"IE00B4WXJJ64",currency:"EUR",price:109.99,shares:312,region:"Europe",symbol:"IE00B4WXJJ64.SG"},
+    {id:"s4",broker:"Swissquote",product:"Vanguard FTSE EM",isin:"IE00B3VVMM84",currency:"EUR",price:72.02,shares:400,region:"Emerging",symbol:"IE00B3VVMM84.SG"},
+    {id:"s5",broker:"Swissquote",product:"HSBC EURO STOXX 50 UCITS ETF EUR",isin:"IE00B4K6B022",currency:"EUR",price:68.32,shares:225,region:"Europe",symbol:"IE00B4K6B022.SG"},
+    
+    {id:"e1",broker:"Equate+",product:"Novartis blocked shares",isin:"CH0012005267",currency:"CHF",price:125.1,shares:254,region:"Switzerland",symbol:"NOVN.SW"},
+    {id:"e2",broker:"Equate+",product:"Sandoz blocked shares",isin:"CH0454664001",currency:"CHF",price:70.64,shares:6,region:"Switzerland",symbol:"SDZ.SW"},
+    {id:"e3",broker:"Equate+",product:"Takeda shares",isin:"JP3463000004",currency:"USD",price:16.815,shares:510,region:"Japan",symbol:"TAK.US"},
+    
+    {id:"f1",broker:"Finpension",product:"Pilastro 3A (first)",isin:"-",currency:"CHF",price:57798,shares:1,region:"Mix",symbol:"",fixed:true},
+    {id:"f2",broker:"Finpension",product:"Pilastro 3A (second)",isin:"-",currency:"CHF",price:16091,shares:1,region:"Mix",symbol:"",fixed:true},
+  ];
+
+  const defaultFx = {EURCHF:0.9211, USDCHF:0.8059, updated:null};
+
+  let holdings = JSON.parse(JSON.stringify(defaultHoldings));
+  let fx = JSON.parse(JSON.stringify(defaultFx));
+  let prevValues = {};
+
+  const fmtTime = d => {
+    const pad = x => String(x).padStart(2,"0");
+    return pad(d.getHours())+":"+pad(d.getMinutes())+":"+pad(d.getSeconds());
+  };
+  
+  const fmtCHF = n => {
+    const rounded = Math.round(n);
+    const parts = Math.abs(rounded).toString().split("").reverse();
+    let out = [];
+    for(let i=0;i<parts.length;i++){
+      if(i>0 && i%3===0) out.push("'");
+      out.push(parts[i]);
+    }
+    return "CHF " + (rounded<0?"-":"") + out.reverse().join("");
+  };
+
+  function rateFor(ccy){
+    if(ccy==="CHF") return 1;
+    if(ccy==="EUR") return fx.EURCHF;
+    if(ccy==="USD") return fx.USDCHF;
+    return 1;
+  }
+
+  function valueCHF(h){ return h.price * h.shares * rateFor(h.currency); }
+
+  async function loadStorage(){
+    try{
+      const h = await window.storage.get(STORAGE_KEY);
+      if(h && h.value) holdings = JSON.parse(h.value);
+    }catch(e){ }
+    try{
+      const f = await window.storage.get(FX_KEY);
+      if(f && f.value) fx = JSON.parse(f.value);
+    }catch(e){ }
+    
+    document.getElementById("lastUpdated").textContent = fx.updated ? "Cambi sincronizzati il " + new Date(fx.updated).toLocaleDateString() : "Dati inizializzati localmente";
+    render();
+  }
+
+  async function saveHoldings(){
+    try{ await window.storage.set(STORAGE_KEY, JSON.stringify(holdings)); }catch(e){ }
+  }
+  async function saveFx(){
+    try{ await window.storage.set(FX_KEY, JSON.stringify(fx)); }catch(e){ }
+  }
+
+  const debouncedSave = debounce(() => { saveHoldings(); }, 500);
+
+  async function fetchFxRates(){
+    try{
+      const [eur, usd] = await Promise.all([
+        fetch("https://api.frankfurter.app/latest?from=EUR&to=CHF").then(r=>r.json()),
+        fetch("https://api.frankfurter.app/latest?from=USD&to=CHF").then(r=>r.json())
+      ]);
+      if(eur && eur.rates && eur.rates.CHF) fx.EURCHF = eur.rates.CHF;
+      if(usd && usd.rates && usd.rates.CHF) fx.USDCHF = usd.rates.CHF;
+      fx.updated = new Date().toISOString();
+      await saveFx();
+      return true;
+    }catch(e){
+      console.error("Errore FX", e);
+      return false;
+    }
+  }
+
+  function withTimeout(promise, ms){
+    return Promise.race([
+      promise,
+      new Promise((_,reject) => setTimeout(()=>reject(new Error("timeout")), ms))
+    ]);
+  }
+
+  async function fetchOnce(url, ms=2500){
+    const res = await withTimeout(fetch(url, { cache:"no-store" }), ms);
+    if(!res.ok) throw new Error("HTTP "+res.status);
+    return await res.json();
+  }
+
+  async function fetchViaProxies(url){
+    const proxyWrap = p => [
+      p,
+      "https://corsproxy.io/?url=" + encodeURIComponent(p),
+      "https://api.allorigins.win/raw?url=" + encodeURIComponent(p),
+      "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(p)
+    ];
+    const hosts = [
+      url,
+      url.replace("query1.finance.yahoo.com", "query2.finance.yahoo.com")
+    ];
+    const attempts = hosts.flatMap(proxyWrap);
+
+    let lastErr = null;
+    for(const attempt of attempts){
+      try{
+        return await fetchOnce(attempt);
+      }catch(e){ lastErr = e; }
+    }
+    throw lastErr || new Error("Proxy falliti");
+  }
+
+  async function fetchStooqPrice(symbol, retries=1){
+    for(let attempt=0; attempt<=retries; attempt++){
+      try{
+        const url = "https://query1.finance.yahoo.com/v8/finance/chart/" + encodeURIComponent(symbol);
+        const data = await fetchViaProxies(url);
+        const result = data && data.chart && data.chart.result && data.chart.result[0];
+        const price = result && result.meta && result.meta.regularMarketPrice;
+        if(price && !isNaN(price) && price > 0) return price;
+      }catch(e) {
+        if(attempt===retries) console.error("Errore quotazione live per ticker:", symbol, e);
+      }
+      if(attempt<retries) await new Promise(r=>setTimeout(r, 300));
+    }
+    return null;
+  }
+
+  async function fetchBatch(items, worker, concurrency=4){
+    const queue = [...items];
+    const runners = new Array(concurrency).fill(0).map(async () => {
+      while(queue.length){
+        const item = queue.shift();
+        await worker(item);
+      }
+    });
+    await Promise.all(runners);
+  }
+
+  async function refreshAll(){
+    const btn = document.getElementById("refreshBtn");
+    btn.disabled = true;
+    btn.textContent = "Aggiornamento in corso...";
+
+    prevValues = {}; holdings.forEach(h => prevValues[h.id] = valueCHF(h));
+
+    await fetchFxRates();
+
+    const symHoldings = holdings.filter(h => h.symbol && h.symbol.trim() && !h.fixed);
+    await fetchBatch(symHoldings, async h => {
+      const price = await fetchStooqPrice(h.symbol.trim(), 1);
+      if(price){ h.price = price; h._fetchStatus = "ok"; }
+      else { h._fetchStatus = "fail"; }
+    }, 4);
+    await saveHoldings();
+
+    btn.disabled = false;
+    btn.textContent = "Aggiorna Cambi e Prezzi Live";
+    document.getElementById("lastUpdated").textContent = "Aggiornato alle " + fmtTime(new Date());
+    render(true);
+  }
+
+  function buildFxRow(){
+    const row = document.getElementById("fxRow");
+    row.innerHTML = `
+      <div class="fx-pill">EUR - CHF <input type="number" step="0.0001" id="fxEUR" value="${fx.EURCHF}"></div>
+      <div class="fx-pill">USD - CHF <input type="number" step="0.0001" id="fxUSD" value="${fx.USDCHF}"></div>
+      <div class="fx-pill" id="fxStatus">${fx.updated ? "Cambi live delle " + fmtTime(new Date(fx.updated)) : "Tassi di default"}</div>
+    `;
+    document.getElementById("fxEUR").addEventListener("input", e=>{ fx.EURCHF = parseFloat(e.target.value)||fx.EURCHF; saveFx(); updateTotals(); });
+    document.getElementById("fxUSD").addEventListener("input", e=>{ fx.USDCHF = parseFloat(e.target.value)||fx.USDCHF; saveFx(); updateTotals(); });
+  }
+
+  function buildBrokerRecap() {
+    const row = document.getElementById("recapRow");
+    const targetBrokers = ["Degiro", "Swissquote", "Equate+", "Finpension"];
+    
+    row.innerHTML = targetBrokers.map(b => {
+      const total = holdings.filter(h => h.broker === b).reduce((s, h) => s + valueCHF(h), 0);
+      
+      let nomeVisualizzato = b;
+      if (b === "Finpension") nomeVisualizzato = "Pilastri (3A)";
+      if (b === "Equate+") nomeVisualizzato = "Equate+ (Azioni)";
+
+      return `
+        <div class="recap-card">
+          <div class="recap-label">${nomeVisualizzato}</div>
+          <div class="recap-val" data-recap-broker="${b}">${fmtCHF(total)}</div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  function updateTotals() {
+    let grandTotal = 0;
+    const brokerOrder = ["Degiro","Swissquote","Equate+","Finpension"];
+    
+    holdings.forEach(h => {
+      const rowValEl = document.querySelector(`.flash[data-id="${h.id}"]`);
+      if (rowValEl) rowValEl.textContent = fmtCHF(valueCHF(h));
+    });
+    
+    brokerOrder.forEach(broker => {
+      const brokerTotal = holdings.filter(h => h.broker === broker).reduce((s, h) => s + valueCHF(h), 0);
+      grandTotal += brokerTotal;
+      
+      const subtotalEl = document.querySelector(`.subtotal-val[data-broker="${broker}"]`);
+      if (subtotalEl) subtotalEl.textContent = fmtCHF(brokerTotal);
+      
+      const recapValEl = document.querySelector(`[data-recap-broker="${broker}"]`);
+      if (recapValEl) recapValEl.textContent = fmtCHF(brokerTotal);
+    });
+    
+    document.getElementById("totalValue").textContent = fmtCHF(grandTotal);
+    const grandTotalEl = document.querySelector(".grandtotal-val");
+    if (grandTotalEl) grandTotalEl.textContent = fmtCHF(grandTotal);
+  }
+
+  function buildBrokers(){
+    const brokersEl = document.getElementById("brokers");
+    const brokerOrder = ["Degiro","Swissquote","Equate+","Finpension"];
+    
+    const sections = brokerOrder.map(broker=>{
+      const rows = holdings.filter(h=>h.broker===broker);
+      if(!rows.length) return "";
+      
+      const bodyRows = rows.map(h=>{
+        const dotClass = h.fixed ? "dot-none" : (h._fetchStatus==="ok" ? "dot-ok" : h._fetchStatus==="fail" ? "dot-fail" : "dot-none");
+        
+        // Per gli asset 'fixed' (come i Pilastri 3A), sblocchiamo il Prezzo rendendolo la casella del Valore Totale
+        const priceInput = `<input class="editable" data-id="${h.id}" data-field="price" type="number" step="0.01" value="${h.price}">`;
+        const sharesInput = h.fixed ? `<span style="color:var(--muted)">1</span>` : `<input class="editable" data-id="${h.id}" data-field="shares" type="number" step="1" value="${h.shares}">`;
+        const symbolField = h.fixed ? `<span class="status-dot dot-none"></span><span style="font-size:11px;color:var(--muted);">Fisso (Manuale)</span>` : `<span class="status-dot ${dotClass}"></span><input class="sym-input" data-id="${h.id}" data-field="symbol" placeholder="Es. NOVN.SW" value="${h.symbol||''}">`;
+
+        return `
+        <tr>
+          <td style="font-weight: 500; color: var(--muted);">${h.broker}</td>
+          <td class="cell-product"><b>${h.product}</b><span class="cell-isin">${h.isin}</span></td>
+          <td data-label="Regione"><span class="tag">${h.region}</span></td>
+          <td data-label="Valuta" style="font-family: 'IBM Plex Mono', monospace; font-size:12px;">${h.currency}</td>
+          <td data-label="Prezzo / Valore" class="num">${priceInput}</td>
+          <td data-label="Quote" class="num">${sharesInput}</td>
+          <td data-label="Valore Posizione" class="num flash" data-id="${h.id}">-</td>
+          <td data-label="Ticker Yahoo">${symbolField}</td>
+        </tr>`;
+      }).join("");
+      
+      return `
+      <tr class="broker-sep"><td colspan="8">${broker}</td></tr>
+      ${bodyRows}
+      <tr class="subtotal-row"><td colspan="6">Totale Parziale - ${broker}</td><td class="num subtotal-val" data-broker="${broker}">-</td><td></td></tr>`;
+    }).join("");
+
+    brokersEl.innerHTML = sections + `
+      <tr class="grand-total-row" style="background: var(--paper);"><td colspan="6" style="font-weight:700;">Totale Portafoglio Globale</td><td class="num grandtotal-val" style="font-weight:700; color:var(--gold);">-</td><td></td></tr>`;
+  }
+
+  const brokersEl = document.getElementById("brokers");
+  brokersEl.addEventListener("input", e => {
+    const target = e.target;
+    const id = target.dataset.id;
+    const field = target.dataset.field;
+    if (!id || !field) return;
+    
+    const h = holdings.find(x => x.id === id);
+    if (field === "symbol") {
+      h.symbol = target.value.trim();
+      debouncedSave();
+    } else {
+      const val = parseFloat(target.value);
+      if (!isNaN(val)) {
+        h[field] = val;
+        updateTotals();
+        debouncedSave();
+      }
+    }
+  });
+
+  function render(flashChanges){
+    buildFxRow();
+    buildBrokerRecap();
+    buildBrokers();
+    updateTotals();
+
+    if(flashChanges){
+      holdings.forEach(h=>{
+        const el = document.querySelector(`.flash[data-id="${h.id}"]`);
+        if(!el) return;
+        const prev = prevValues[h.id], now = valueCHF(h);
+        if(prev !== undefined && now !== prev){
+          el.classList.add(now > prev ? "flash-up" : "flash-down");
+          setTimeout(()=> el.classList.remove("flash-up","flash-down"), 1800);
+        }
+      });
+    }
+  }
+
+  document.getElementById("refreshBtn").addEventListener("click", refreshAll);
+  document.getElementById("resetBtn").addEventListener("click", async () => {
+    if(confirm("Ripristinare i valori predefiniti del foglio Excel? Le modifiche locali andranno perse.")) {
+      holdings = JSON.parse(JSON.stringify(defaultHoldings));
+      fx = JSON.parse(JSON.stringify(defaultFx));
+      await saveHoldings(); await saveFx();
+      render();
+    }
+  });
+
+  loadStorage();
+})();
+</script>
+</body>
+</html>
